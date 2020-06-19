@@ -1,21 +1,60 @@
 require("dotenv").config();
-const { WakaTimeClient, RANGE } = require("wakatime-client");
+const { XMLHttpRequest } = require("xmlhttprequest");
+const { ajax } = require("rxjs/ajax");
+const { tap } = require("rxjs/operators");
 const Octokit = require("@octokit/rest");
-
 const {
   GIST_ID: gistId,
   GH_TOKEN: githubToken,
   WAKATIME_API_KEY: wakatimeApiKey
 } = process.env;
-
-const wakatime = new WakaTimeClient(wakatimeApiKey);
+const baseURL = "https://wakatime.com";
+console.log("gistId: ", gistId);
 
 const octokit = new Octokit({ auth: `token ${githubToken}` });
 
+function weekBefore() {
+  const date = new Date();
+  date.setDate(date.getDate() - 7);
+  return date;
+}
+function dateFormat(date) {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+function btoa(message) {
+  return Buffer.from(message).toString("base64");
+}
+function createXHR() {
+  return new XMLHttpRequest();
+}
 async function main() {
-  const stats = await wakatime.getMyStats({ range: RANGE.LAST_7_DAYS });
-  console.log("stats: ", stats)
-  await updateGist(stats);
+  console.log("start main: ");
+  const start = dateFormat(weekBefore());
+  const end = dateFormat(new Date());
+  const summary = ajax({
+    createXHR,
+    url: `${baseURL}/api/v1/users/current/summaries?start=2020-06-17&end=2020-06-18`,
+    method: "GET",
+    crossDomain: true,
+    withCredentials: false,
+    headers: {
+      authorization: `Basic ${btoa(wakatimeApiKey)}`
+    }
+  }).pipe(tap(console.log));
+  summary.subscribe(
+    res => updateGist(res.response),
+    err => console.error(err)
+  );
+  // try {
+  //   const stats = await request.get(`/api/vi/users/current/summaries?start=2020-06-17&end=2020-06-18`)
+  //   console.log('stats: ', stats)
+  //   await updateGist(stats)
+  // } catch (e) {
+  //   console.error(e)
+  // }
+}
+function formatSeconds(seconds) {
+  return new Date(seconds * 1000).toISOString().substr(11, 8);
 }
 
 async function updateGist(stats) {
@@ -25,24 +64,39 @@ async function updateGist(stats) {
   } catch (error) {
     console.error(`Unable to get gist\n${error}`);
   }
-
-  const lines = [];
-  for (let i = 0; i < Math.min(stats.data.languages.length, 5); i++) {
-    const data = stats.data.languages[i];
-    const { name, percent, text: time } = data;
-
-    const line = [
+  const arr = stats.data.map(({ languages }) => languages).flat();
+  const sum = arr.reduce((acc, curr) => acc + curr.total_seconds, 0);
+  const converted = Array.from(
+    arr
+      .reduce((acc, curr) => {
+        const accItem = acc.get(curr.name);
+        if (accItem) {
+          const total = accItem.total_seconds + curr.total_seconds;
+          acc.set(curr.name, {
+            ...accItem,
+            total_seconds: total,
+            percent: (total / sum) * 100
+          });
+        } else {
+          acc.set(curr.name, curr);
+        }
+        return acc;
+      }, new Map())
+      .values()
+  ).sort((a, b) => b.percent - a.percent);
+  const lines = converted.map(({ name, percent, total_seconds }) =>
+    [
       name.padEnd(11),
-      time.padEnd(14),
       generateBarChart(percent, 21),
-      String(percent.toFixed(1)).padStart(5) + "%"
-    ];
-
-    lines.push(line.join(" "));
+      String(percent.toFixed(1)).padStart(5) + "%",
+      formatSeconds(total_seconds).padEnd(14)
+    ].join(" ")
+  );
+  if (lines.length == 0) {
+    console.warn("no data to update");
+    return;
   }
-
-  if (lines.length == 0) return;
-
+  const content = lines.join("\n");
   try {
     // Get original filename to update that same file
     const filename = Object.keys(gist.data.files)[0];
@@ -51,10 +105,11 @@ async function updateGist(stats) {
       files: {
         [filename]: {
           filename: `📊 Weekly development breakdown`,
-          content: lines.join("\n")
+          content: content
         }
       }
     });
+    console.log("update content: \n", content);
   } catch (error) {
     console.error(`Unable to update gist\n${error}`);
   }

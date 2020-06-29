@@ -33,7 +33,7 @@ async function main() {
   const end = dateFormat(new Date());
   const summary = ajax({
     createXHR,
-    url: `${baseURL}/api/v1/users/current/summaries?start=2020-06-17&end=2020-06-18`,
+    url: `${baseURL}/api/v1/users/current/summaries?start=${start}&end=${end}`,
     method: "GET",
     crossDomain: true,
     withCredentials: false,

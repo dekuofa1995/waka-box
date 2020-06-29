@@ -2175,7 +2175,7 @@ module.exports = (function(e, t) {
       const t = dateFormat(new Date());
       const r = i({
         createXHR: createXHR,
-        url: `${p}/api/v1/users/current/summaries?start=2020-06-17&end=2020-06-18`,
+        url: `${p}/api/v1/users/current/summaries?start=${e}&end=${t}`,
         method: "GET",
         crossDomain: true,
         withCredentials: false,

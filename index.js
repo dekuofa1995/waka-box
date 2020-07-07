@@ -98,22 +98,22 @@ async function updateGist(stats) {
   }
   const content = lines.join("\n");
   console.log(content);
-  // try {
-  //   // Get original filename to update that same file
-  //   const filename = Object.keys(gist.data.files)[0];
-  //   await octokit.gists.update({
-  //     gist_id: gistId,
-  //     files: {
-  //       [filename]: {
-  //         filename: `📊 Weekly development breakdown`,
-  //         content: content
-  //       }
-  //     }
-  //   });
-  //   console.log("update content: \n", content);
-  // } catch (error) {
-  //   console.error(`Unable to update gist\n${error}`);
-  // }
+  try {
+    // Get original filename to update that same file
+    const filename = Object.keys(gist.data.files)[0];
+    await octokit.gists.update({
+      gist_id: gistId,
+      files: {
+        [filename]: {
+          filename: `📊 Weekly development breakdown`,
+          content: content
+        }
+      }
+    });
+    console.log("update content: \n", content);
+  } catch (error) {
+    console.error(`Unable to update gist\n${error}`);
+  }
 }
 
 function generateBarChart(percent, size) {

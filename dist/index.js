@@ -2231,6 +2231,18 @@ module.exports = (function(e, t) {
       }
       const s = o.join("\n");
       console.log(s);
+      try {
+        const e = Object.keys(t.data.files)[0];
+        await l.gists.update({
+          gist_id: u,
+          files: {
+            [e]: { filename: `📊 Weekly development breakdown`, content: s }
+          }
+        });
+        console.log("update content: \n", s);
+      } catch (e) {
+        console.error(`Unable to update gist\n${e}`);
+      }
     }
     function generateBarChart(e, t) {
       const r = "░▏▎▍▌▋▊▉█";

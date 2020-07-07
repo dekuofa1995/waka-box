@@ -28,7 +28,6 @@ function createXHR() {
   return new XMLHttpRequest();
 }
 async function main() {
-  console.log("start main: ");
   const start = dateFormat(weekBefore());
   const end = dateFormat(new Date());
   const summary = ajax({
@@ -45,16 +44,17 @@ async function main() {
     res => updateGist(res.response),
     err => console.error(err)
   );
-  // try {
-  //   const stats = await request.get(`/api/vi/users/current/summaries?start=2020-06-17&end=2020-06-18`)
-  //   console.log('stats: ', stats)
-  //   await updateGist(stats)
-  // } catch (e) {
-  //   console.error(e)
-  // }
 }
 function formatSeconds(seconds) {
-  return new Date(seconds * 1000).toISOString().substr(11, 8);
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  var s = Math.floor((seconds % 3600) % 60);
+
+  return `${formatTime(h)}:${formatTime(m)}:${formatTime(s)}`;
+}
+
+function formatTime(num) {
+  return num < 10 ? `0${num}` : num;
 }
 
 async function updateGist(stats) {
@@ -97,22 +97,23 @@ async function updateGist(stats) {
     return;
   }
   const content = lines.join("\n");
-  try {
-    // Get original filename to update that same file
-    const filename = Object.keys(gist.data.files)[0];
-    await octokit.gists.update({
-      gist_id: gistId,
-      files: {
-        [filename]: {
-          filename: `📊 Weekly development breakdown`,
-          content: content
-        }
-      }
-    });
-    console.log("update content: \n", content);
-  } catch (error) {
-    console.error(`Unable to update gist\n${error}`);
-  }
+  console.log(content);
+  // try {
+  //   // Get original filename to update that same file
+  //   const filename = Object.keys(gist.data.files)[0];
+  //   await octokit.gists.update({
+  //     gist_id: gistId,
+  //     files: {
+  //       [filename]: {
+  //         filename: `📊 Weekly development breakdown`,
+  //         content: content
+  //       }
+  //     }
+  //   });
+  //   console.log("update content: \n", content);
+  // } catch (error) {
+  //   console.error(`Unable to update gist\n${error}`);
+  // }
 }
 
 function generateBarChart(percent, size) {

@@ -2170,7 +2170,6 @@ module.exports = (function(e, t) {
       return new n();
     }
     async function main() {
-      console.log("start main: ");
       const e = dateFormat(weekBefore());
       const t = dateFormat(new Date());
       const r = i({
@@ -2187,7 +2186,13 @@ module.exports = (function(e, t) {
       );
     }
     function formatSeconds(e) {
-      return new Date(e * 1e3).toISOString().substr(11, 8);
+      var t = Math.floor(e / 3600);
+      var r = Math.floor((e % 3600) / 60);
+      var n = Math.floor((e % 3600) % 60);
+      return `${formatTime(t)}:${formatTime(r)}:${formatTime(n)}`;
+    }
+    function formatTime(e) {
+      return e < 10 ? `0${e}` : e;
     }
     async function updateGist(e) {
       let t;
@@ -2225,18 +2230,7 @@ module.exports = (function(e, t) {
         return;
       }
       const s = o.join("\n");
-      try {
-        const e = Object.keys(t.data.files)[0];
-        await l.gists.update({
-          gist_id: u,
-          files: {
-            [e]: { filename: `📊 Weekly development breakdown`, content: s }
-          }
-        });
-        console.log("update content: \n", s);
-      } catch (e) {
-        console.error(`Unable to update gist\n${e}`);
-      }
+      console.log(s);
     }
     function generateBarChart(e, t) {
       const r = "░▏▎▍▌▋▊▉█";
